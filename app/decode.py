@@ -1,17 +1,12 @@
-import sys
 import time
 import numpy as np
-import pyaudio
-import select
-import termios
-import tty
-from scapy.all import Ether, IP, ICMP, raw
+# from scapy.all import Ether,
 
 from app.util import DTMF_FREQS, DURATION, LOW_FREQS, HIGH_FREQS,PACKET_TIMEOUT,goertzel
 
 
 
-RATE = 8000
+RATE = 16000
 FRAME_MS = 20        # フレーム長（ms単位）
 CHUNK = int(RATE * FRAME_MS / 1000)
 
@@ -63,8 +58,8 @@ class DTMFDecoder:
                         # パケット終了
 
                         if len(tmps)>=1:
-                            # add padding
-                            byte_packet.append(tmps[0]<<4 | int(0,16))
+                            # add 0 padding
+                            byte_packet.append(tmps[0]<<4 )
                             tmps=[]
                         print("\nパケット終了: ", byte_packet.hex(), flush=True)
                         # pkt = Ether(byte_packet)

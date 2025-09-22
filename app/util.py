@@ -10,10 +10,10 @@ DTMF_FREQS = {
     0xe: (941, 1209), 0x0: (941, 1336), 0xf: (941, 1477), 0xd: (941, 1633),
 }
 
-DURATION = 0.2  # トーン長さ（秒）
-SILENCE_DURATION = 0.5  # 無音時間（秒）
-MAX_FRAME_SIZE = 4096  # フレームサイズの最大
-PACKET_TIMEOUT = 2.0  # 無音2秒でパケット終了
+DURATION = 0.14  # トーン長さ（秒）
+SILENCE_DURATION = 0.14  # 無音時間（秒）
+MAX_FRAME_SIZE = 1600  # フレームサイズの最大(MTU)
+PACKET_TIMEOUT = 0.3  # 無音0.3秒でパケット終了
 
 def goertzel(samples, freq, rate):
     n = len(samples)
