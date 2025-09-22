@@ -1,9 +1,9 @@
 import app
 from app.decode import DTMFDecoder
 from app.encode import DTMFEncoder
-from app.util import MAX_FRAME_SIZE
+from app.util import MAX_FRAME_SIZE, PACKET_TIMEOUT
 import pyaudio
-
+import time
 
 # めんどくさいので半二重で実装する
 class DTMF_NIC():
@@ -24,7 +24,9 @@ class DTMF_NIC():
         )
         self.decoder=DTMFDecoder(self.decoder_stream)
     def main(self):
+        last_send_time=time.time()
         while True:
+            current_time = time.time()
             # 受信があればブロッキング、ない場合即時読み取りへ
             #print("*"*30)
             #print("Recieving...")
@@ -32,13 +34,15 @@ class DTMF_NIC():
             if len(recv_packet)!=0:
                 print("Receiving end! and Writing ...")
                 self.io.write(recv_packet)
-                print("Wrinting end!")
+                print("Wrinting end!\n")
             else:
                 pass
                 #print("No Recv")
             
             #print("="*30)
             #print("Read File...")
+            if current_time-last_send_time<PACKET_TIMEOUT*10.0:
+                continue
             send_packet = self.io.read(MAX_FRAME_SIZE)
             #print("Reading End!")
             if send_packet:
@@ -46,7 +50,8 @@ class DTMF_NIC():
                 # 誰も送信していないとみなす
                 self.decoder_stream.stop_stream()
                 self.encoder.send(send_packet)
-                print("Sending End!")
+                last_send_time=time.time()
+                print("Sending End!\n")
                 # 送信中はプロセスはブロックされ、受信されない
                 self.decoder_stream.start_stream()
             else:

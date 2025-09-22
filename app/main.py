@@ -32,10 +32,12 @@ class DEBUG_ICMP():
         if self.num>0:
             if len(self.send_buffer)>0:
                 pkt=self.send_buffer.pop(0)
-                print(pkt.summary())
-                print(pkt.show())
-                print(pkt)
-                return raw(pkt)
+                data = raw(pkt)
+                print("sending raw data : ",data.hex())
+                print("sending summary : " ,pkt.summary())
+                print("sending formatted data :")
+                pkt.show()
+                return data
             else:
                 return b""
         self.num+=1
@@ -44,9 +46,10 @@ class DEBUG_ICMP():
             return b""
         pkt = Ether(src=self.MY_MAC) / IP(dst=dst_ip, src=self.MY_IP) / ICMP(type="echo-request")
         data = raw(pkt)
-        print(pkt.summary())
-        print(pkt.show())
-        print(pkt)
+        print("sending raw data : ",data.hex())
+        print("sending summary : " ,pkt.summary())
+        print("sending formatted data :")
+        pkt.show()
         return data
     def write(self,data):
         if len(data)==0:
@@ -56,9 +59,9 @@ class DEBUG_ICMP():
         except:
             print("Invalid Packet")
             return
-        print(pkt.summary())
-        print(pkt.show())
-        print(pkt)
+        print("recieving data :",pkt.summary())
+        print("recieving formatted data : ")
+        pkt.show()
         if pkt.haslayer(ARP):
             arp = pkt[ARP]
             # 自分宛てのARPリクエストか確認
@@ -128,11 +131,14 @@ class TAP_IO():
             return None
         return None
     def write(self,data):
-        pkt = Ether(data)
-        print("recieving data : ",pkt.summary())
-        print("recieving formatted data : ")
-        pkt.show()
-        os.write(self.fd,data)
+        try:
+            pkt = Ether(data)
+            print("recieving data : ",pkt.summary())
+            print("recieving formatted data : ")
+            pkt.show()
+            os.write(self.fd,data)
+        except Exception:
+            return
 
 """
 Before running this script, set up the TAP device with:
@@ -156,8 +162,8 @@ if __name__ == "__main__":
     # mode="DEBUG"
     # mode="TEXT"
     # mode="FILE"
-    mode="ICMP"
-    # mode="TAP"
+    # mode="ICMP"
+    mode="TAP"
     if mode=="DEBUG":
         DTMF_NIC(DEBUG_IO()).main()
         exit(0)

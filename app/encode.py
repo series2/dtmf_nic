@@ -11,17 +11,19 @@ CHUNK=128 # tiisai hodo anntei suru rasii
 class DTMFEncoder:
     def __init__(self,stream):
         self.stream=stream
-    def play_tone(self, key=None):
+    def play_tone(self, key=None,duration=None):
         # print("debug",key,key in DTMF_FREQS)
         if key is None or key not in DTMF_FREQS:
-            t = np.linspace(0, SILENCE_DURATION, int(RATE*SILENCE_DURATION), False)
+            duration= duration if duration is not None else SILENCE_DURATION
+            t = np.linspace(0, duration, int(RATE*duration), False)
             wave_data = (np.sin(2*np.pi*0*t) + np.sin(2*np.pi*0*t)) * 0
             wave_data=(wave_data*((2<<14) -1)).astype(np.int16)
             # for start in range(0,len(wave_data),CHUNK):
                 # self.stream.write(wave_data[start:start+CHUNK].tobytes())
             return wave_data
+        duration= duration if duration is not None else DURATION
         f1, f2 = DTMF_FREQS[key]
-        t = np.linspace(0, DURATION, int(RATE*DURATION), False)
+        t = np.linspace(0, duration, int(RATE*duration), False)
         wave_data = (np.sin(2*np.pi*f1*t) + np.sin(2*np.pi*f2*t)) * 0.2
         
         fade_len=int(0.01*RATE)
@@ -63,6 +65,7 @@ class DTMFEncoder:
             # time.sleep(SILENCE_DURATION)
             data=self.play_tone(None)
             wave_data.append(data)
+        #data=self.play_tone(None,PACKET_TIMEOUT*2.0)
         self.stream.write(np.concatenate(wave_data).tobytes())
         # file="tmp.wav"
         # while os.path.exists(file):
@@ -72,7 +75,7 @@ class DTMFEncoder:
         #     wf.setsampwidth(2)
         #     wf.setframerate(RATE)
         #     wf.writeframes(np.concatenate(wave_data).tobytes())
-        time.sleep(PACKET_TIMEOUT*2.0)
+        #time.sleep(PACKET_TIMEOUT*2.0) send が終わってしばらくはrecvに専念する
     
 
     def __exit__(self):
