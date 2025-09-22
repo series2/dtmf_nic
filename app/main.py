@@ -62,15 +62,15 @@ class TAP_IO():
     def read(self,n):
         try:
             data=os.read(self.fd,n)
-            print(data.hex())
             pkt = Ether(data)
-            print(pkt.summary())
-            print(pkt.show())
-            print(pkt)
-
-            if ICMP not in pkt and ARP not in pkt:
-                return None # OS ga yokei na packet wo irete kuru node filter suru.
             
+            if ICMP not in pkt and ARP not in pkt:
+                print("send rejected :",pkt.summary())
+                return None # OS ga yokei na packet wo irete kuru node filter suru.
+            print("sending data : ",pkt.summary())
+            print("sending raw data : ",data.hex())
+            print("sending formatted data : ")
+            pkt.show()
             return data
         except BlockingIOError:
             return None
@@ -79,9 +79,9 @@ class TAP_IO():
         return None
     def write(self,data):
         pkt = Ether(data)
-        print(pkt.summary())
-        print(pkt.show())
-        print(pkt)
+        print("recieving data : ",pkt.summary())
+        print("recieving formatted data : ")
+        pkt.show()
         os.write(self.fd,data)
 
 """

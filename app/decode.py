@@ -61,7 +61,8 @@ class DTMFDecoder:
                             # add 0 padding
                             byte_packet.append(tmps[0]<<4 )
                             tmps=[]
-                        print("\nパケット終了: ", byte_packet.hex(), flush=True)
+                        if len(byte_packet)>0:
+                            print("\nパケット終了: ", byte_packet.hex(), flush=True)
                         # pkt = Ether(byte_packet)
                         # print(pkt)
                         return byte_packet
@@ -109,6 +110,8 @@ class DTMFDecoder:
 
             # キー確定
             if active_frames == MIN_ACTIVE_FRAMES:
+                if len(tmps)==0 and len(byte_packet)==0:
+                    print("Recieving ... : " , end="",flush=True)
                 tmps.append(current_key)
                 if len(tmps)>=2:
                     byte_packet.append(tmps[0]<<4 | tmps[1])

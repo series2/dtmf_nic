@@ -26,20 +26,21 @@ class DTMF_NIC():
     def main(self):
         while True:
             # 受信があればブロッキング、ない場合即時読み取りへ
-            print("*"*30)
-            print("Recieving...")
+            #print("*"*30)
+            #print("Recieving...")
             recv_packet = self.decoder.recv()
             if len(recv_packet)!=0:
                 print("Receiving end! and Writing ...")
                 self.io.write(recv_packet)
                 print("Wrinting end!")
             else:
-                print("No Recv")
+                pass
+                #print("No Recv")
             
-            print("="*30)
-            print("Read File...")
+            #print("="*30)
+            #print("Read File...")
             send_packet = self.io.read(MAX_FRAME_SIZE)
-            print("Reading End!")
+            #print("Reading End!")
             if send_packet:
                 print("Sending ...")
                 # 誰も送信していないとみなす
@@ -49,4 +50,5 @@ class DTMF_NIC():
                 # 送信中はプロセスはブロックされ、受信されない
                 self.decoder_stream.start_stream()
             else:
-                print("No Send")
+                pass
+                #print("No Send")
