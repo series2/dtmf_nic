@@ -20,22 +20,72 @@ class DEBUG_IO():
         print(data.hex())
 
 
-from scapy.all import Ether, IP, ICMP,ARP , raw
+from scapy.all import Ether, IP, ICMP,ARP, raw
 class DEBUG_ICMP():
-    # def __init__(self):
+    def __init__(self):
+        self.num=0
+        self.MY_IP = "192.168.111.13"
+        self.MY_MAC = "00:11:22:33:44:55"
+        self.send_buffer=[]
 
     def read(self,n):
-        src_ip=input("> ").strip()
-        if src_ip=="":
+        if self.num>0:
+            if len(self.send_buffer)>0:
+                pkt=self.send_buffer.pop(0)
+                print(pkt.summary())
+                print(pkt.show())
+                print(pkt)
+                return raw(pkt)
+            else:
+                return b""
+        self.num+=1
+        dst_ip=input("> ").strip() # 192.168.111.15
+        if dst_ip=="":
             return b""
-        pkt = Ether() / IP(src=src_ip, dst="192.168.111.13") / ICMP(type="echo-reply")
+        pkt = Ether(src=self.MY_MAC) / IP(dst=dst_ip, src=self.MY_IP) / ICMP(type="echo-request")
         data = raw(pkt)
-        return data
-    def write(self,data):
-        pkt = Ether(data)
         print(pkt.summary())
         print(pkt.show())
         print(pkt)
+        return data
+    def write(self,data):
+        if len(data)==0:
+            return
+        try:
+            pkt = Ether(data)
+        except:
+            print("Invalid Packet")
+            return
+        print(pkt.summary())
+        print(pkt.show())
+        print(pkt)
+        if pkt.haslayer(ARP):
+            arp = pkt[ARP]
+            # 自分宛てのARPリクエストか確認
+            if arp.op == 1 and arp.pdst == self.MY_IP:  # op=1はARPリクエスト
+                # ARPリプライを作成
+                arp_reply = Ether(dst=pkt.src, src=self.MY_MAC) / ARP(
+                    op=2,              # ARPリプライ
+                    hwsrc=self.MY_MAC,      # 自分のMAC
+                    psrc=self.MY_IP,        # 自分のIP
+                    hwdst=arp.hwsrc,   # 問い合わせ元のMAC
+                    pdst=arp.psrc      # 問い合わせ元のIP
+                )
+                # パケットをバッファへ
+                self.send_buffer.append(arp_reply)
+        if pkt.haslayer(IP) and pkt.haslayer(ICMP):
+            ip = pkt[IP]
+            icmp = pkt[ICMP]
+            # ICMP Echo Request (type=8)
+            if icmp.type == 8 and ip.dst == self.MY_IP:
+                icmp_reply = Ether(dst=pkt.src, src=self.MY_MAC) / IP(
+                    src=self.MY_IP, dst=ip.src
+                ) / ICMP(
+                    type=0,  # Echo Reply
+                    id=icmp.id,
+                    seq=icmp.seq
+                ) / icmp.payload  # ペイロードをそのまま返す
+                self.send_buffer.append(icmp_reply)
 
 class DEBUG_TEXT_FILE_IO():
     def __init__(self):
@@ -106,8 +156,8 @@ if __name__ == "__main__":
     # mode="DEBUG"
     # mode="TEXT"
     # mode="FILE"
-    # mode="ICMP"
-    mode="TAP"
+    mode="ICMP"
+    # mode="TAP"
     if mode=="DEBUG":
         DTMF_NIC(DEBUG_IO()).main()
         exit(0)
