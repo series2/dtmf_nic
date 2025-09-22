@@ -20,7 +20,7 @@ class DEBUG_IO():
         print(data.hex())
 
 
-from scapy.all import Ether, IP, ICMP, raw
+from scapy.all import Ether, IP, ICMP,ARP , raw
 class DEBUG_ICMP():
     # def __init__(self):
 
@@ -28,7 +28,7 @@ class DEBUG_ICMP():
         src_ip=input("> ").strip()
         if src_ip=="":
             return b""
-        pkt = Ether() / IP(src=src_ip, dst="0.0.0.0") / ICMP(type="echo-reply")
+        pkt = Ether() / IP(src=src_ip, dst="192.168.111.13") / ICMP(type="echo-reply")
         data = raw(pkt)
         return data
     def write(self,data):
@@ -57,23 +57,57 @@ class TAP_IO():
         self.fd = os.open("/dev/net/tun", os.O_RDWR)
         ifr = struct.pack("16sH", b"mynic", IFF_TAP | IFF_NO_PI)
         fcntl.ioctl(self.fd, TUNSETIFF, ifr)
+        flags = fcntl.fcntl(self.fd,fcntl.F_GETFL)
+        fcntl.fcntl(self.fd,fcntl.F_SETFL,flags|os.O_NONBLOCK)
     def read(self,n):
-        return os.read(self.fd,n)
+        try:
+            data=os.read(self.fd,n)
+            print(data.hex())
+            pkt = Ether(data)
+            print(pkt.summary())
+            print(pkt.show())
+            print(pkt)
+
+            if ICMP not in pkt and ARP not in pkt:
+                return None # OS ga yokei na packet wo irete kuru node filter suru.
+            
+            return data
+        except BlockingIOError:
+            return None
+        except Exception:
+            return None
+        return None
     def write(self,data):
+        pkt = Ether(data)
+        print(pkt.summary())
+        print(pkt.show())
+        print(pkt)
         os.write(self.fd,data)
 
 """
 Before running this script, set up the TAP device with:
 sudo ip tuntap add dev mynic mode tap user $USER
 sudo ip link set mynic up
-sudo ip addr add 192.168.10.1/24 dev mynic
+sudo ip addr add 192.168.111.15/24 dev mynic
+# option filtering...
+sudo iptables -A INPUT -i mynic -j DROP
+sudo iptables -A OUTPUT -o mynic -j DROP
+sudo iptables -A INPUT -i mynic -p icmp -j ACCEPT
+sudo iptables -A OUTPUT -o mynic -p icmp -j ACCEPT
+
+
+end ...
+sudo ip link set dev mynic down
+sudo ip tuntap del dev mynic mode tap
+# option
+... iptables ha saikidou de kieru.
 """
 if __name__ == "__main__":
     # mode="DEBUG"
-    mode="TEXT"
+    # mode="TEXT"
     # mode="FILE"
     # mode="ICMP"
-    # mode="TAP"
+    mode="TAP"
     if mode=="DEBUG":
         DTMF_NIC(DEBUG_IO()).main()
         exit(0)
